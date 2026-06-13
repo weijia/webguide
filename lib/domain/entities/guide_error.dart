@@ -25,7 +25,7 @@ class GuideError {
   /// 时间戳
   final DateTime timestamp;
 
-  const GuideError({
+  GuideError({
     required this.type,
     required this.message,
     this.details,

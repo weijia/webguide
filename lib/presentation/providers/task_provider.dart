@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/guide_task.dart';
 import '../../data/models/user_progress.dart';
 import '../../data/repositories/task_repository.dart';
+import '../../domain/entities/guide_error.dart';
 import '../../services/guide/guide_controller.dart';
 import '../../services/webview/webview_manager.dart';
 import '../../services/webview/js_bridge.dart';

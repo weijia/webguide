@@ -10,7 +10,7 @@ import '../../../domain/entities/guide_error.dart';
 import '../../../data/models/user_progress.dart';
 import '../../../services/guide/guide_controller.dart';
 import '../../../services/webview/webview_manager.dart';
-import '../../providers/task_provider.dart';
+import '../providers/task_provider.dart';
 import '../widgets/guide_mask.dart';
 import '../widgets/guide_card.dart';
 import '../widgets/highlight_border.dart';

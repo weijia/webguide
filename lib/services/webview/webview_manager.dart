@@ -113,7 +113,7 @@ class WebViewManager {
 
         // HTTP 请求
         onHttpError: (HttpResponseError error) {
-          debugPrint('[WebView] HTTP 错误: ${error.statusCode}');
+          debugPrint('[WebView] HTTP 错误: ${error.uri.toString()}');
         },
       ),
     );

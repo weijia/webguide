@@ -181,16 +181,16 @@ class ElementRect {
   final double bottom;
 
   /// 宽度
-  final double get width => right - left;
+  double get width => right - left;
 
   /// 高度
-  final double get height => bottom - top;
+  double get height => bottom - top;
 
   /// 中心 X 坐标
-  final double get centerX => left + width / 2;
+  double get centerX => left + width / 2;
 
   /// 中心 Y 坐标
-  final double get centerY => top + height / 2;
+  double get centerY => top + height / 2;
 
   const ElementRect({
     required this.left,

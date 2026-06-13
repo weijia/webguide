@@ -1,7 +1,7 @@
-import '../../models/guide_task.dart';
-import '../../models/user_progress.dart';
-import '../local/task_local_source.dart';
-import '../remote/task_remote_source.dart';
+import '../models/guide_task.dart';
+import '../models/user_progress.dart';
+import '../sources/local/task_local_source.dart';
+import '../sources/remote/task_remote_source.dart';
 
 /// 任务仓库
 /// 整合本地和远程数据源，提供统一的数据访问接口

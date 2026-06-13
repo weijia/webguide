@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import '../../../core/constants/app_constants.dart';
 
@@ -61,7 +62,7 @@ class JsBridgeMessage {
   /// 时间戳
   final DateTime timestamp;
 
-  const JsBridgeMessage({
+  JsBridgeMessage({
     required this.type,
     this.data,
     this.id,
