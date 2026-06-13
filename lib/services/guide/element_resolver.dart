@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../data/models/guide_step.dart';
 import '../../domain/entities/element_info.dart';
 import '../webview/webview_manager.dart';
@@ -110,7 +112,7 @@ class ElementResolver {
             // 策略 2a: 查找包含精确文本的元素
             var xpath = "//*[text()='$escapedText']";
             var elements = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            
+
             // 优先查找可见的交互元素
             for (var i = 0; i < elements.snapshotLength; i++) {
               var el = elements.snapshotItem(i);
@@ -118,7 +120,7 @@ class ElementResolver {
                 return JSON.stringify(__webguide_getElementInfo(el));
               }
             }
-            
+
             // 策略 2b: 查找包含文本的元素（模糊匹配）
             var allElements = document.querySelectorAll('button, a, input, [role="button"], [role="link"], label, span, div');
             for (var i = 0; i < allElements.length; i++) {
@@ -129,7 +131,7 @@ class ElementResolver {
                 }
               }
             }
-            
+
             return null;
           } catch(e) {
             return null;
@@ -185,10 +187,6 @@ class ElementResolver {
     try {
       // 构建选择器
       String selector = target.tag ?? '*';
-
-      if (target.elementId != null && target.elementId!.isNotEmpty) {
-        selector += '#${target.elementId}';
-      }
 
       if (target.attributes != null) {
         for (final entry in target.attributes!.entries) {
@@ -269,11 +267,11 @@ class ElementResolver {
             var elements = document.querySelectorAll('button, a, input, select, textarea, [role="button"], [role="link"], [role="textbox"], [tabindex]');
             var bestMatch = null;
             var bestScore = 0;
-            
+
             for (var i = 0; i < elements.length; i++) {
               var el = elements[i];
               if (!__webguide_isVisible(el)) continue;
-              
+
               var score = 0;
               var elText = (el.textContent || '').toLowerCase();
               var elPlaceholder = (el.placeholder || '').toLowerCase();
@@ -281,7 +279,7 @@ class ElementResolver {
               var elId = (el.id || '').toLowerCase();
               var elClass = (el.className || '').toLowerCase();
               var elType = (el.type || el.tagName || '').toLowerCase();
-              
+
               for (var j = 0; j < keywords.length; j++) {
                 var kw = keywords[j];
                 if (elText.indexOf(kw) !== -1) score += 3;
@@ -291,13 +289,13 @@ class ElementResolver {
                 if (elClass.indexOf(kw) !== -1) score += 1;
                 if (elType.indexOf(kw) !== -1) score += 2;
               }
-              
+
               if (score > bestScore) {
                 bestScore = score;
                 bestMatch = el;
               }
             }
-            
+
             if (bestMatch && bestScore > 0) {
               return JSON.stringify(__webguide_getElementInfo(bestMatch));
             }
@@ -356,7 +354,7 @@ class ElementResolver {
       if (result is String) {
         jsonString = result;
       } else if (result is Map) {
-        jsonString = result.toString();
+        jsonString = jsonEncode(result);
       } else {
         jsonString = result.toString();
       }
@@ -372,8 +370,7 @@ class ElementResolver {
 
       final Map<String, dynamic> jsonMap;
       try {
-        // 尝试直接解析
-        jsonMap = _parseJson(jsonString);
+        jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
       } catch (e) {
         // 解析失败，返回 null
         return null;
@@ -386,39 +383,6 @@ class ElementResolver {
     } catch (e) {
       return null;
     }
-  }
-
-  /// 简单 JSON 解析
-  Map<String, dynamic> _parseJson(String jsonString) {
-    // 使用 dart:convert 的 jsonDecode
-    // 这里通过动态导入避免循环依赖
-    // 实际使用中直接 import 'dart:convert'
-    final decoded = _simpleJsonDecode(jsonString);
-    if (decoded is Map<String, dynamic>) return decoded;
-    throw FormatException('Invalid JSON');
-  }
-
-  /// 简单 JSON 解码器（用于处理 WebView 返回的字符串）
-  dynamic _simpleJsonDecode(String str) {
-    // 去除首尾空白
-    str = str.trim();
-    if (str.isEmpty) return null;
-
-    // 这是一个简化版本，实际项目中应使用 dart:convert
-    // 这里直接返回 null，让上层处理
-    try {
-      // 使用内置的 JSON 解码
-      return _decodeJsonNative(str);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// 原生 JSON 解码
-  dynamic _decodeJsonNative(String str) {
-    // 标记为需要 dart:convert
-    // 实际在运行时由 dart:convert 处理
-    throw UnimplementedError('Use dart:convert jsonDecode');
   }
 
   /// 计算匹配置信度
@@ -498,7 +462,21 @@ class ElementResolver {
 
       // 解析结果列表
       final List<ElementInfo> elements = [];
-      // 实际解析由上层处理
+      try {
+        String jsonString = result.toString();
+        if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
+          jsonString = jsonString.substring(1, jsonString.length - 1);
+          jsonString = jsonString.replaceAll(r'\n', '\n').replaceAll(r'\t', '\t').replaceAll(r'\"', '"');
+        }
+        final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
+        for (final item in jsonList) {
+          if (item is Map<String, dynamic>) {
+            elements.add(ElementInfo.fromJson(item));
+          }
+        }
+      } catch (e) {
+        // 解析失败，返回空列表
+      }
       return elements;
     } catch (e) {
       return [];

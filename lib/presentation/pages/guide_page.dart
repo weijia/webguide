@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../data/models/guide_step.dart';
+import '../../../domain/entities/element_info.dart';
+import '../../../domain/entities/guide_error.dart';
+import '../../../data/models/user_progress.dart';
 import '../../../services/guide/guide_controller.dart';
 import '../../../services/webview/webview_manager.dart';
 import '../../providers/task_provider.dart';
@@ -147,22 +151,22 @@ class _GuidePageState extends ConsumerState<GuidePage> {
   }
 
   /// 步骤变化
-  void _onStepChanged(int stepIndex, dynamic step) {
+  void _onStepChanged(int stepIndex, GuideStep step) {
     if (mounted) {
       setState(() {
         _currentStep = stepIndex;
         _totalSteps = _guideController.totalSteps;
-        _hasNext = _guideController.hasNext;
-        _hasPrevious = _guideController.hasPrevious;
-        _stepTitle = step.title as String? ?? '';
-        _stepDescription = step.description as String? ?? '';
+        _hasNext = _guideController.hasNextStep;
+        _hasPrevious = _guideController.hasPreviousStep;
+        _stepTitle = step.title;
+        _stepDescription = step.description;
       });
     }
   }
 
   /// 元素定位成功
-  void _onElementLocated(dynamic element) {
-    if (mounted && element != null) {
+  void _onElementLocated(ElementInfo element) {
+    if (mounted) {
       setState(() {
         // 将元素位置转换为屏幕坐标
         final rect = element.rect;
@@ -175,16 +179,16 @@ class _GuidePageState extends ConsumerState<GuidePage> {
   }
 
   /// 引导错误
-  void _onGuideError(dynamic error) {
+  void _onGuideError(GuideError error) {
     if (mounted) {
       setState(() {
-        _errorMessage = error.userFriendlyMessage as String? ?? '发生错误';
+        _errorMessage = error.userFriendlyMessage;
       });
     }
   }
 
   /// 引导完成
-  void _onGuideCompleted(dynamic progress) {
+  void _onGuideCompleted(UserProgress progress) {
     if (mounted) {
       setState(() {
         _showMask = false;

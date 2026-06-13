@@ -1,68 +1,168 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'guide_step.dart';
 
-part 'guide_task.freezed.dart';
-part 'guide_task.g.dart';
-
 /// 引导任务数据模型
-/// 使用 freezed 实现不可变数据类，支持 JSON 序列化
-@freezed
-class GuideTask with _$GuideTask {
-  const factory GuideTask({
-    /// 任务唯一标识
-    required String id,
+/// 手写不可变数据类，支持 JSON 序列化和 copyWith
+class GuideTask {
+  /// 任务唯一标识
+  final String id;
 
-    /// 任务名称
-    required String name,
+  /// 任务名称
+  final String name;
 
-    /// 任务描述
-    required String description,
+  /// 任务描述
+  final String description;
 
-    /// 任务分类（signup, shopping, social, tools, development）
-    required String category,
+  /// 任务分类（signup, shopping, social, tools, development）
+  final String category;
 
-    /// 难度等级（easy, medium, hard）
-    required String difficulty,
+  /// 难度等级（easy, medium, hard）
+  final String difficulty;
 
-    /// 预估完成时间（分钟）
-    required int estimatedTime,
+  /// 预估完成时间（分钟）
+  final int estimatedTime;
 
-    /// 目标网站 URL
-    required String targetUrl,
+  /// 目标网站 URL
+  final String targetUrl;
 
-    /// 引导步骤列表
-    @Default([]) List<GuideStep> steps,
+  /// 引导步骤列表
+  final List<GuideStep> steps;
 
-    /// 任务图标（emoji 或图标名称）
-    @Default('📋') String icon,
+  /// 任务图标（emoji 或图标名称）
+  final String icon;
 
-    /// 任务标签
-    @Default([]) List<String> tags,
+  /// 任务标签
+  final List<String> tags;
 
-    /// 任务版本号
-    @Default('1.0.0') String version,
+  /// 任务版本号
+  final String version;
 
-    /// 作者
-    @Default('WebGuide') String author,
+  /// 作者
+  final String author;
 
-    /// 下载次数
-    @Default(0) int downloadCount,
+  /// 下载次数
+  final int downloadCount;
 
-    /// 评分（1-5）
-    @Default(0.0) double rating,
+  /// 评分（1-5）
+  final double rating;
 
-    /// 是否收藏
-    @Default(false) bool isFavorite,
+  /// 是否收藏
+  final bool isFavorite;
 
-    /// 创建时间（ISO 8601 格式）
-    @Default('') String createdAt,
+  /// 创建时间（ISO 8601 格式）
+  final String createdAt;
 
-    /// 更新时间（ISO 8601 格式）
-    @Default('') String updatedAt,
-  }) = _GuideTask;
+  /// 更新时间（ISO 8601 格式）
+  final String updatedAt;
+
+  const GuideTask({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.category,
+    required this.difficulty,
+    required this.estimatedTime,
+    required this.targetUrl,
+    this.steps = const [],
+    this.icon = '\u{1F4CB}',
+    this.tags = const [],
+    this.version = '1.0.0',
+    this.author = 'WebGuide',
+    this.downloadCount = 0,
+    this.rating = 0.0,
+    this.isFavorite = false,
+    this.createdAt = '',
+    this.updatedAt = '',
+  });
 
   /// 从 JSON 创建 GuideTask 实例
-  factory GuideTask.fromJson(Map<String, dynamic> json) => _$GuideTaskFromJson(json);
+  factory GuideTask.fromJson(Map<String, dynamic> json) {
+    return GuideTask(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      category: json['category'] as String? ?? '',
+      difficulty: json['difficulty'] as String? ?? '',
+      estimatedTime: json['estimatedTime'] as int? ?? 0,
+      targetUrl: json['targetUrl'] as String? ?? '',
+      steps: (json['steps'] as List<dynamic>?)
+              ?.map((s) => GuideStep.fromJson(s as Map<String, dynamic>))
+              .toList() ??
+          [],
+      icon: json['icon'] as String? ?? '\u{1F4CB}',
+      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      version: json['version'] as String? ?? '1.0.0',
+      author: json['author'] as String? ?? 'WebGuide',
+      downloadCount: json['downloadCount'] as int? ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      createdAt: json['createdAt'] as String? ?? '',
+      updatedAt: json['updatedAt'] as String? ?? '',
+    );
+  }
+
+  /// 转换为 JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'difficulty': difficulty,
+      'estimatedTime': estimatedTime,
+      'targetUrl': targetUrl,
+      'steps': steps.map((s) => s.toJson()).toList(),
+      'icon': icon,
+      'tags': tags,
+      'version': version,
+      'author': author,
+      'downloadCount': downloadCount,
+      'rating': rating,
+      'isFavorite': isFavorite,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+    };
+  }
+
+  /// 创建副本
+  GuideTask copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? category,
+    String? difficulty,
+    int? estimatedTime,
+    String? targetUrl,
+    List<GuideStep>? steps,
+    String? icon,
+    List<String>? tags,
+    String? version,
+    String? author,
+    int? downloadCount,
+    double? rating,
+    bool? isFavorite,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return GuideTask(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      difficulty: difficulty ?? this.difficulty,
+      estimatedTime: estimatedTime ?? this.estimatedTime,
+      targetUrl: targetUrl ?? this.targetUrl,
+      steps: steps ?? this.steps,
+      icon: icon ?? this.icon,
+      tags: tags ?? this.tags,
+      version: version ?? this.version,
+      author: author ?? this.author,
+      downloadCount: downloadCount ?? this.downloadCount,
+      rating: rating ?? this.rating,
+      isFavorite: isFavorite ?? this.isFavorite,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }
 
 /// GuideTask 扩展方法
