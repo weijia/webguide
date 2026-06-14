@@ -25,10 +25,21 @@ jobs:
         with:
           flutter-version: '3.x'
 
+      # ==================== 解码签名 keystore ====================
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release-keystore.jks
+          ls -la android/app/release-keystore.jks
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      # ==================== 构建签名 APK ====================
+      - name: Build signed APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build apk --release
 
       - name: Upload APK to SFTP
