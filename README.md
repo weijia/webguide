@@ -49,47 +49,191 @@
 
 ## JSON 输出格式
 
+严格按照以下格式输出，每个字段都必须存在，值类型必须匹配。下面是一个带真实值的完整模板：
+
 ```json
 {
-  "id": "英文小写+下划线的唯一标识",
-  "name": "任务中文名称",
-  "description": "一两句话描述这个任务帮助用户做什么",
-  "category": "分类（signup/shopping/social/tools/development/other）",
-  "difficulty": "难度（easy/medium/hard）",
-  "estimatedTime": 预计分钟数,
-  "targetUrl": "网页URL",
-  "icon": "一个emoji图标",
-  "tags": ["标签1", "标签2", "标签3"],
+  "id": "bilibili_signup",
+  "name": "B站注册引导",
+  "description": "手把手引导你在哔哩哔哩上完成账号注册，从打开注册页面到完成手机验证的全流程。",
+  "category": "signup",
+  "difficulty": "easy",
+  "estimatedTime": 10,
+  "targetUrl": "https://passport.bilibili.com/register",
+  "icon": "📺",
+  "tags": ["B站", "bilibili", "注册", "视频"],
   "version": "1.0.0",
-  "author": "作者名",
+  "author": "WebGuide",
   "downloadCount": 0,
   "rating": 0,
-  "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-01-01T00:00:00Z",
+  "createdAt": "2026-06-14T00:00:00Z",
+  "updatedAt": "2026-06-14T00:00:00Z",
   "steps": [
     {
       "id": "step_1",
       "order": 1,
-      "title": "简短步骤标题",
-      "description": "详细描述用户在这一步需要做什么，面向普通用户，语气友好",
+      "title": "确认注册页面已加载",
+      "description": "首先打开B站的注册页面，确认页面已加载完成，可以看到手机号输入框。",
       "target": {
-        "selector": "CSS选择器",
-        "tag": "HTML标签名",
-        "text": "元素的可见文本（可选）",
-        "attributes": {"属性名": "属性值"},
+        "selector": "input[type='tel']",
+        "tag": "input",
+        "text": "请输入手机号",
+        "attributes": {"type": "tel"},
         "waitForElement": true,
         "waitTimeout": 30000
       },
-      "action": "操作类型",
-      "validation": "验证方式",
-      "hint": "给用户的小贴士或注意事项",
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "如果页面没有自动跳转，请手动访问 passport.bilibili.com/register",
       "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_2",
+      "order": 2,
+      "title": "输入手机号",
+      "description": "在手机号输入框中输入你的手机号码，B站会向该手机号发送验证码。",
+      "target": {
+        "selector": "input[type='tel']",
+        "tag": "input",
+        "text": "请输入手机号",
+        "attributes": {"type": "tel"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "请输入真实的手机号码，后续需要接收验证码",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_3",
+      "order": 3,
+      "title": "点击发送验证码",
+      "description": "点击「发送验证码」按钮，B站会向你输入的手机号发送一条包含6位数字验证码的短信。",
+      "target": {
+        "selector": "button[type='button']",
+        "tag": "button",
+        "text": "发送验证码",
+        "attributes": {"type": "button"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "如果60秒内未收到，可以点击重新发送",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_4",
+      "order": 4,
+      "title": "输入验证码",
+      "description": "查看手机短信中的6位验证码，在验证码输入框中依次输入。",
+      "target": {
+        "selector": "input[type='text']",
+        "tag": "input",
+        "text": "请输入验证码",
+        "attributes": {"type": "text"},
+        "waitForElement": true,
+        "waitTimeout": 120000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "验证码是6位数字，注意区分大小写",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 180000
+    },
+    {
+      "id": "step_5",
+      "order": 5,
+      "title": "设置密码",
+      "description": "为你的B站账号设置一个密码。密码需要8-16位，包含字母和数字。",
+      "target": {
+        "selector": "input[type='password']",
+        "tag": "input",
+        "text": "设置密码",
+        "attributes": {"type": "password"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "建议使用包含大小写字母和数字的强密码",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_6",
+      "order": 6,
+      "title": "点击注册按钮",
+      "description": "确认所有信息填写正确后，点击「注册」按钮完成账号创建。",
+      "target": {
+        "selector": "button[type='button']",
+        "tag": "button",
+        "text": "注册",
+        "attributes": {"type": "button"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "urlChange",
+      "hint": "如果提示手机号已注册，请尝试其他手机号或直接登录",
+      "waitAfterComplete": 3000,
       "isOptional": false,
       "timeout": 60000
     }
   ]
 }
 ```
+
+### 字段值说明
+
+| 字段 | 值类型 | 示例值 | 说明 |
+|------|--------|--------|------|
+| `id` | string | `"bilibili_signup"` | 英文小写+下划线，唯一标识 |
+| `name` | string | `"B站注册引导"` | 显示在任务列表的名称 |
+| `description` | string | `"手把手引导你..."` | 一两句话描述 |
+| `category` | string | `"signup"` | 必须是：signup / shopping / social / tools / development / other |
+| `difficulty` | string | `"easy"` | 必须是：easy / medium / hard |
+| `estimatedTime` | number | `10` | 预计完成分钟数（整数） |
+| `targetUrl` | string | `"https://..."` | 引导开始时加载的网页地址 |
+| `icon` | string | `"📺"` | 一个 emoji 字符 |
+| `tags` | array | `["B站", "注册"]` | 3-5个搜索标签 |
+| `version` | string | `"1.0.0"` | 语义化版本号 |
+| `author` | string | `"WebGuide"` | 作者名称 |
+| `downloadCount` | number | `0` | 固定填 0 |
+| `rating` | number | `0` | 固定填 0 |
+| `createdAt` | string | `"2026-06-14T00:00:00Z"` | ISO 8601 格式时间 |
+| `updatedAt` | string | `"2026-06-14T00:00:00Z"` | ISO 8601 格式时间 |
+| `steps` | array | `[{...}, ...]` | 步骤数组，至少1个 |
+
+### 步骤字段值说明
+
+| 字段 | 值类型 | 示例值 | 说明 |
+|------|--------|--------|------|
+| `id` | string | `"step_1"` | 步骤唯一标识 |
+| `order` | number | `1` | 步骤顺序，从1开始递增 |
+| `title` | string | `"输入手机号"` | 简短标题，显示在引导卡片上 |
+| `description` | string | `"在手机号输入框中..."` | 详细描述，面向普通用户 |
+| `target.selector` | string | `"input[type='tel']"` | CSS选择器，用于定位网页元素 |
+| `target.tag` | string | `"input"` | HTML标签名 |
+| `target.text` | string | `"请输入手机号"` | 元素的可见文本，用于辅助定位 |
+| `target.attributes` | object | `{"type": "tel"}` | 元素的HTML属性，用于辅助定位 |
+| `target.waitForElement` | boolean | `true` | 固定填 true |
+| `target.waitTimeout` | number | `30000` | 等待元素出现的超时（毫秒） |
+| `action` | string | `"input"` | 必须是：click / input / wait |
+| `validation` | string | `"elementAppeared"` | 必须是：elementAppeared / urlChange / manual |
+| `hint` | string | `"请输入真实手机号"` | 给用户的提示信息 |
+| `waitAfterComplete` | number | `2000` | 步骤完成后等待时间（毫秒） |
+| `isOptional` | boolean | `false` | 固定填 false |
+| `timeout` | number | `60000` | 步骤整体超时（毫秒） |
 
 ## CSS 选择器规则（非常重要）
 
@@ -328,40 +472,143 @@ WebGuide 是一个 Flutter APP，通过 WebView 加载网页，逐步引导用�
 
 ## JSON 格式要求
 
+严格按照以下格式输出（这是一个 B站注册的完整示例，请参照此格式生成）：
+
 ```json
 {
-  "id": "唯一标识（英文小写+下划线）",
-  "name": "任务名称",
-  "description": "任务描述",
-  "category": "分类",
-  "difficulty": "难度",
-  "estimatedTime": 分钟数,
-  "targetUrl": "目标URL",
-  "icon": "emoji",
-  "tags": ["标签1", "标签2"],
+  "id": "bilibili_signup",
+  "name": "B站注册引导",
+  "description": "手把手引导你在哔哩哔哩上完成账号注册，从打开注册页面到完成手机验证的全流程。",
+  "category": "signup",
+  "difficulty": "easy",
+  "estimatedTime": 10,
+  "targetUrl": "https://passport.bilibili.com/register",
+  "icon": "📺",
+  "tags": ["B站", "bilibili", "注册", "视频"],
   "version": "1.0.0",
-  "author": "作者",
+  "author": "WebGuide",
   "downloadCount": 0,
   "rating": 0,
-  "createdAt": "2026-01-01T00:00:00Z",
-  "updatedAt": "2026-01-01T00:00:00Z",
+  "createdAt": "2026-06-14T00:00:00Z",
+  "updatedAt": "2026-06-14T00:00:00Z",
   "steps": [
     {
       "id": "step_1",
       "order": 1,
-      "title": "步骤标题",
-      "description": "步骤描述（中文，面向普通用户）",
+      "title": "确认注册页面已加载",
+      "description": "首先打开B站的注册页面，确认页面已加载完成，可以看到手机号输入框。",
       "target": {
-        "selector": "CSS选择器（优先用 input[type='xxx']）",
-        "tag": "HTML标签名",
-        "attributes": {"属性名": "属性值"},
+        "selector": "input[type='tel']",
+        "tag": "input",
+        "text": "请输入手机号",
+        "attributes": {"type": "tel"},
         "waitForElement": true,
         "waitTimeout": 30000
       },
-      "action": "click / input / wait",
-      "validation": "elementAppeared / urlChange / manual",
-      "hint": "提示信息",
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "如果页面没有自动跳转，请手动访问 passport.bilibili.com/register",
       "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_2",
+      "order": 2,
+      "title": "输入手机号",
+      "description": "在手机号输入框中输入你的手机号码，B站会向该手机号发送验证码。",
+      "target": {
+        "selector": "input[type='tel']",
+        "tag": "input",
+        "text": "请输入手机号",
+        "attributes": {"type": "tel"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "请输入真实的手机号码，后续需要接收验证码",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_3",
+      "order": 3,
+      "title": "点击发送验证码",
+      "description": "点击「发送验证码」按钮，B站会向你输入的手机号发送一条包含6位数字验证码的短信。",
+      "target": {
+        "selector": "button[type='button']",
+        "tag": "button",
+        "text": "发送验证码",
+        "attributes": {"type": "button"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "如果60秒内未收到，可以点击重新发送",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_4",
+      "order": 4,
+      "title": "输入验证码",
+      "description": "查看手机短信中的6位验证码，在验证码输入框中依次输入。",
+      "target": {
+        "selector": "input[type='text']",
+        "tag": "input",
+        "text": "请输入验证码",
+        "attributes": {"type": "text"},
+        "waitForElement": true,
+        "waitTimeout": 120000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "验证码是6位数字，注意区分大小写",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 180000
+    },
+    {
+      "id": "step_5",
+      "order": 5,
+      "title": "设置密码",
+      "description": "为你的B站账号设置一个密码。密码需要8-16位，包含字母和数字。",
+      "target": {
+        "selector": "input[type='password']",
+        "tag": "input",
+        "text": "设置密码",
+        "attributes": {"type": "password"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "建议使用包含大小写字母和数字的强密码",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_6",
+      "order": 6,
+      "title": "点击注册按钮",
+      "description": "确认所有信息填写正确后，点击「注册」按钮完成账号创建。",
+      "target": {
+        "selector": "button[type='button']",
+        "tag": "button",
+        "text": "注册",
+        "attributes": {"type": "button"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "urlChange",
+      "hint": "如果提示手机号已注册，请尝试其他手机号或直接登录",
+      "waitAfterComplete": 3000,
       "isOptional": false,
       "timeout": 60000
     }
