@@ -231,6 +231,66 @@ class TaskRemoteSource {
     }
   }
 
+  // ==================== 任务导入 ====================
+
+  /// 从 URL 下载任务 JSON 并解析
+  /// [url] 任务 JSON 文件的 URL
+  Future<GuideTask> downloadTaskFromUrl(String url) async {
+    try {
+      // 使用独立的 Dio 实例，不依赖 baseUrl
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 30),
+          responseType: ResponseType.plain,
+        ),
+      );
+
+      final response = await dio.get(url);
+      final jsonString = response.data as String;
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+
+      // 验证必要字段
+      _validateTaskJson(jsonMap);
+
+      return GuideTask.fromJson(jsonMap);
+    } on DioException catch (e) {
+      throw RemoteDataSourceException('下载任务失败: ${_dioErrorMessage(e)}');
+    } on FormatException catch (e) {
+      throw RemoteDataSourceException('JSON 格式错误: ${e.message}');
+    } catch (e) {
+      throw RemoteDataSourceException('导入任务失败: ${e.toString()}');
+    }
+  }
+
+  /// 验证任务 JSON 的必要字段
+  void _validateTaskJson(Map<String, dynamic> json) {
+    final requiredFields = ['id', 'name', 'description', 'steps'];
+    for (final field in requiredFields) {
+      if (!json.containsKey(field) || json[field] == null) {
+        throw RemoteDataSourceException('任务 JSON 缺少必要字段: $field');
+      }
+    }
+    if (json['steps'] is! List || (json['steps'] as List).isEmpty) {
+      throw RemoteDataSourceException('任务步骤不能为空');
+    }
+  }
+
+  String _dioErrorMessage(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return '连接超时';
+      case DioExceptionType.connectionError:
+        return '网络连接失败';
+      case DioExceptionType.badResponse:
+        return '服务器返回错误 (${e.response?.statusCode})';
+      default:
+        return e.message ?? '未知错误';
+    }
+  }
+
   // ==================== 错误处理 ====================
 
   /// 处理 Dio 错误，转换为业务异常

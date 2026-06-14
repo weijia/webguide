@@ -159,6 +159,37 @@ class TaskListNotifier extends StateNotifier<TaskListState> {
   Future<void> refresh() async {
     await loadTasks(forceRefresh: true);
   }
+
+  /// 从本地文件导入任务
+  Future<String?> importFromFile() async {
+    try {
+      final task = await _repository.importTaskFromFile();
+      if (task == null) return null; // 用户取消
+
+      // 刷新列表以显示新导入的任务
+      await loadTasks(forceRefresh: true);
+      return task.name;
+    } on TaskImportException catch (e) {
+      return '导入失败: ${e.message}';
+    } catch (e) {
+      return '导入失败: ${e.toString()}';
+    }
+  }
+
+  /// 从 URL 导入任务
+  Future<String?> importFromUrl(String url) async {
+    try {
+      final task = await _repository.importTaskFromUrl(url);
+
+      // 刷新列表以显示新导入的任务
+      await loadTasks(forceRefresh: true);
+      return task.name;
+    } on TaskImportException catch (e) {
+      return '导入失败: ${e.message}';
+    } catch (e) {
+      return '导入失败: ${e.toString()}';
+    }
+  }
 }
 
 // ==================== 引导会话 Provider ====================

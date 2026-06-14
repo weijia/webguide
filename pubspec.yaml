@@ -40,6 +40,9 @@ dependencies:
   # UI 工具
   google_fonts: ^6.1.0
 
+  # 文件选择
+  file_picker: ^8.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

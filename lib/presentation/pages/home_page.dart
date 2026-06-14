@@ -48,6 +48,14 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
     super.dispose();
   }
 
+  /// 显示导入对话框
+  void _showImportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const _ImportTaskDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final taskState = ref.watch(taskListProvider);
@@ -92,6 +100,11 @@ class _HomePageState extends ConsumerState<HomePage> with SingleTickerProviderSt
                           ),
                         ],
                       ),
+                    ),
+                    // 导入按钮
+                    IconButton(
+                      icon: const Icon(Icons.download_outlined),
+                      onPressed: () => _showImportDialog(context),
                     ),
                     // 设置按钮
                     IconButton(
@@ -280,4 +293,267 @@ class _CategoryItem {
     required this.value,
     required this.icon,
   });
+}
+
+/// 导入任务对话框
+class _ImportTaskDialog extends ConsumerStatefulWidget {
+  const _ImportTaskDialog();
+
+  @override
+  ConsumerState<_ImportTaskDialog> createState() => _ImportTaskDialogState();
+}
+
+class _ImportTaskDialogState extends ConsumerState<_ImportTaskDialog> {
+  final _urlController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppTheme.surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.download, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 12),
+          const Text('导入引导任务'),
+        ],
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '选择导入方式：',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+
+            // 从本地文件导入
+            _buildImportOption(
+              icon: Icons.folder_open,
+              title: '从本地文件导入',
+              subtitle: '选择 .json 格式的任务文件',
+              onTap: _isLoading ? null : _importFromFile,
+            ),
+
+            const SizedBox(height: 12),
+
+            // 从 URL 导入
+            _buildImportOption(
+              icon: Icons.link,
+              title: '从 URL 导入',
+              subtitle: '输入任务 JSON 文件的下载链接',
+              onTap: null, // 点击展开 URL 输入
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _urlController,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: 'https://example.com/task.json',
+                      hintStyle: TextStyle(color: AppTheme.textSecondaryColor.withOpacity(0.5)),
+                      prefixIcon: const Icon(Icons.http, size: 18),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.url,
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _importFromUrl,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: const Color(0xFF0f172a),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('导入'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImportOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+    Widget? child,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceHighlightColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.dividerColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: AppTheme.primaryColor, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (onTap != null)
+                  const Icon(Icons.chevron_right, size: 18, color: AppTheme.textSecondaryColor),
+              ],
+            ),
+            if (child != null) child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 从本地文件导入
+  Future<void> _importFromFile() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await ref.read(taskListProvider.notifier).importFromFile();
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result == null) {
+      // 用户取消，不关闭对话框
+      return;
+    }
+
+    if (result.startsWith('导入失败')) {
+      setState(() {
+        _error = result;
+      });
+      return;
+    }
+
+    // 导入成功
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('成功导入任务: $result'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+    }
+  }
+
+  /// 从 URL 导入
+  Future<void> _importFromUrl() async {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) {
+      setState(() {
+        _error = '请输入 URL';
+      });
+      return;
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setState(() {
+        _error = 'URL 必须以 http:// 或 https:// 开头';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await ref.read(taskListProvider.notifier).importFromUrl(url);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result.startsWith('导入失败')) {
+      setState(() {
+        _error = result;
+      });
+      return;
+    }
+
+    // 导入成功
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('成功导入任务: $result'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+    }
+  }
 }

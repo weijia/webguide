@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+
 import '../models/guide_task.dart';
 import '../models/user_progress.dart';
 import '../sources/local/task_local_source.dart';
@@ -190,6 +195,100 @@ class TaskRepository {
     );
   }
 
+  // ==================== 任务导入 ====================
+
+  /// 从本地文件导入任务
+  /// 打开文件选择器，让用户选择 JSON 文件
+  Future<GuideTask?> importTaskFromFile() async {
+    try {
+      // 打开文件选择器
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return null; // 用户取消了选择
+      }
+
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty) {
+        throw TaskImportException('文件内容为空');
+      }
+
+      // 解析 JSON
+      final jsonString = utf8.decode(bytes);
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+
+      // 验证必要字段
+      _validateTaskJson(jsonMap);
+
+      final task = GuideTask.fromJson(jsonMap);
+
+      // 保存到缓存
+      await _saveImportedTask(task);
+
+      return task;
+    } on FormatException catch (e) {
+      throw TaskImportException('JSON 格式错误: ${e.message}');
+    } catch (e) {
+      if (e is TaskImportException) rethrow;
+      throw TaskImportException('导入失败: ${e.toString()}');
+    }
+  }
+
+  /// 从 URL 导入任务
+  /// [url] 任务 JSON 文件的 URL
+  Future<GuideTask> importTaskFromUrl(String url) async {
+    try {
+      // 下载并解析任务
+      final task = await _remoteSource.downloadTaskFromUrl(url);
+
+      // 保存到缓存
+      await _saveImportedTask(task);
+
+      return task;
+    } catch (e) {
+      if (e is TaskImportException) rethrow;
+      throw TaskImportException('从 URL 导入失败: ${e.toString()}');
+    }
+  }
+
+  /// 保存导入的任务到本地缓存
+  Future<void> _saveImportedTask(GuideTask task) async {
+    // 获取现有缓存
+    final cached = _localSource.getCachedTasks() ?? [];
+
+    // 检查是否已存在相同 ID 的任务
+    final existingIndex = cached.indexWhere((t) => t.id == task.id);
+    if (existingIndex >= 0) {
+      // 更新现有任务
+      cached[existingIndex] = task;
+    } else {
+      // 添加新任务
+      cached.add(task);
+    }
+
+    // 保存回缓存
+    await _localSource.cacheTasks(cached);
+  }
+
+  /// 验证任务 JSON 的必要字段
+  void _validateTaskJson(Map<String, dynamic> json) {
+    final requiredFields = ['id', 'name', 'description', 'steps'];
+    for (final field in requiredFields) {
+      if (!json.containsKey(field) || json[field] == null) {
+        throw TaskImportException('任务 JSON 缺少必要字段: $field');
+      }
+    }
+    if (json['steps'] is! List || (json['steps'] as List).isEmpty) {
+      throw TaskImportException('任务步骤不能为空');
+    }
+  }
+
   // ==================== 私有方法 ====================
 
   /// 对任务列表进行筛选
@@ -229,4 +328,15 @@ class TaskRepository {
     _localSource.dispose();
     _remoteSource.dispose();
   }
+}
+
+/// 任务导入异常
+class TaskImportException implements Exception {
+  /// 错误消息
+  final String message;
+
+  TaskImportException(this.message);
+
+  @override
+  String toString() => message;
 }
