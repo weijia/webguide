@@ -11,12 +11,10 @@ import '../../../data/models/user_progress.dart';
 import '../../../services/guide/guide_controller.dart';
 import '../../../services/webview/webview_manager.dart';
 import '../providers/task_provider.dart';
-import '../widgets/guide_mask.dart';
 import '../widgets/guide_card.dart';
-import '../widgets/highlight_border.dart';
 
 /// 引导页面
-/// Stack 布局：WebView + 遮罩 + 高亮框 + 引导卡片
+/// Stack 布局：WebView（全屏可操作） + 可拖动引导浮窗 + 顶部工具栏
 class GuidePage extends ConsumerStatefulWidget {
   /// 任务 ID
   final String taskId;
@@ -36,12 +34,6 @@ class _GuidePageState extends ConsumerState<GuidePage> {
 
   /// 引导控制器
   late GuideController _guideController;
-
-  /// 当前高亮区域（相对于 WebView 的位置）
-  Rect? _highlightRect;
-
-  /// 是否显示遮罩
-  bool _showMask = false;
 
   /// 是否显示引导卡片
   bool _showGuideCard = false;
@@ -75,6 +67,12 @@ class _GuidePageState extends ConsumerState<GuidePage> {
 
   /// 是否正在加载 WebView
   bool _isWebViewLoading = true;
+
+  /// 浮窗位置
+  Offset _floatPosition = const Offset(16, 80);
+
+  /// 浮窗是否被拖动过（用于记录用户偏好位置）
+  bool _hasDragged = false;
 
   @override
   void initState() {
@@ -139,12 +137,9 @@ class _GuidePageState extends ConsumerState<GuidePage> {
     if (mounted) {
       setState(() {
         _guideState = state;
-        _showMask = state == GuideState.running;
         _showGuideCard = state == GuideState.running;
         if (state == GuideState.idle || state == GuideState.completed || state == GuideState.error) {
-          _showMask = false;
           _showGuideCard = false;
-          _highlightRect = null;
         }
       });
     }
@@ -164,18 +159,9 @@ class _GuidePageState extends ConsumerState<GuidePage> {
     }
   }
 
-  /// 元素定位成功
+  /// 元素定位成功（保留用于未来扩展，当前不显示高亮框）
   void _onElementLocated(ElementInfo element) {
-    if (mounted) {
-      setState(() {
-        // 将元素位置转换为屏幕坐标
-        final rect = element.rect;
-        _highlightRect = Rect.fromPoints(
-          Offset(rect.left, rect.top),
-          Offset(rect.right, rect.bottom),
-        );
-      });
-    }
+    // 不再显示高亮框和遮罩，用户可以直接操作网页
   }
 
   /// 引导错误
@@ -191,9 +177,7 @@ class _GuidePageState extends ConsumerState<GuidePage> {
   void _onGuideCompleted(UserProgress progress) {
     if (mounted) {
       setState(() {
-        _showMask = false;
         _showGuideCard = false;
-        _highlightRect = null;
       });
 
       // 显示完成对话框
@@ -318,10 +302,12 @@ class _GuidePageState extends ConsumerState<GuidePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Stack(
         children: [
-          // ==================== 第一层：WebView ====================
+          // ==================== 第一层：WebView（全屏可操作） ====================
           Positioned.fill(
             child: _webViewController != null
                 ? Stack(
@@ -346,45 +332,43 @@ class _GuidePageState extends ConsumerState<GuidePage> {
                   ),
           ),
 
-          // ==================== 第二层：遮罩 ====================
-          if (_showMask)
-            Positioned.fill(
-              child: GuideMask(
-                highlightRect: _highlightRect,
-                opacity: 0.6,
-              ),
-            ),
-
-          // ==================== 第三层：高亮框 ====================
-          if (_highlightRect != null && _showMask)
-            Positioned(
-              left: _highlightRect!.left - 4,
-              top: _highlightRect!.top - 4,
-              width: _highlightRect!.width + 8,
-              height: _highlightRect!.height + 8,
-              child: const HighlightBorder(),
-            ),
-
-          // ==================== 第四层：引导卡片 ====================
+          // ==================== 第二层：可拖动引导浮窗 ====================
           if (_showGuideCard && _stepTitle.isNotEmpty)
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 32,
-              child: GuideCard(
-                title: _stepTitle,
-                description: _stepDescription,
-                currentStep: _currentStep + 1,
-                totalSteps: _totalSteps,
-                hasNext: _hasNext,
-                hasPrevious: _hasPrevious,
-                onNext: _handleNext,
-                onPrevious: _handlePrevious,
-                onSkip: _handleSkip,
+              left: _floatPosition.dx,
+              top: _floatPosition.dy,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  setState(() {
+                    _hasDragged = true;
+                    _floatPosition += details.delta;
+                    // 限制在屏幕范围内
+                    _floatPosition = Offset(
+                      _floatPosition.dx.clamp(0, screenSize.width - 280),
+                      _floatPosition.dy.clamp(0, screenSize.height - 120),
+                    );
+                  });
+                },
+                child: GuideCard(
+                  title: _stepTitle,
+                  description: _stepDescription,
+                  currentStep: _currentStep + 1,
+                  totalSteps: _totalSteps,
+                  hasNext: _hasNext,
+                  hasPrevious: _hasPrevious,
+                  onNext: _handleNext,
+                  onPrevious: _handlePrevious,
+                  onSkip: _handleSkip,
+                  onClose: () {
+                    setState(() {
+                      _showGuideCard = false;
+                    });
+                  },
+                ),
               ),
             ),
 
-          // ==================== 第五层：顶部工具栏 ====================
+          // ==================== 第三层：顶部工具栏（半透明，不阻挡操作） ====================
           Positioned(
             top: 0,
             left: 0,
@@ -398,7 +382,7 @@ class _GuidePageState extends ConsumerState<GuidePage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      AppTheme.backgroundColor.withOpacity(0.9),
+                      AppTheme.backgroundColor.withOpacity(0.85),
                       AppTheme.backgroundColor.withOpacity(0.0),
                     ],
                   ),
@@ -439,7 +423,7 @@ class _GuidePageState extends ConsumerState<GuidePage> {
             ),
           ),
 
-          // ==================== 第六层：错误提示 ====================
+          // ==================== 第四层：错误提示 ====================
           if (_guideState == GuideState.error && _errorMessage != null)
             Positioned(
               left: 16,
@@ -488,7 +472,7 @@ class _GuidePageState extends ConsumerState<GuidePage> {
               ),
             ),
 
-          // ==================== 第七层：加载中指示 ====================
+          // ==================== 第五层：加载中指示 ====================
           if (_guideState == GuideState.loading)
             Positioned.fill(
               child: Container(
@@ -509,7 +493,7 @@ class _GuidePageState extends ConsumerState<GuidePage> {
               ),
             ),
 
-          // ==================== 第八层：完成界面 ====================
+          // ==================== 第六层：完成界面 ====================
           if (_guideState == GuideState.completed)
             Positioned.fill(
               child: Container(

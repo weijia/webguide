@@ -253,7 +253,42 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> {
               ),
             ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+
+          // ==================== 开始按钮（放在步骤列表上方） ====================
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                context.push('/guide/${task.id}');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: const Color(0xFF0f172a),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.play_arrow, size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    hasProgress ? '继续引导' : '开始引导',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
 
           // ==================== 步骤预览 ====================
           Container(
@@ -362,41 +397,6 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> {
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 32),
-
-          // ==================== 开始按钮 ====================
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: () {
-                context.push('/guide/${task.id}');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: const Color(0xFF0f172a),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.play_arrow, size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    hasProgress ? '继续引导' : '开始引导',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
 
           const SizedBox(height: 16),
