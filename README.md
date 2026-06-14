@@ -1,6 +1,6 @@
 # WebGuide - 网页引导助手
 
-一个帮助用户逐步完成网页操作的智能引导工具。支持从本地文件或 URL 导入自定义引导任务。
+一个帮助用户逐步完成网页操作的智能引导工具。支持从本地文件、URL 或直接粘贴 JSON 导入自定义引导任务。
 
 ## 创建自定义引导任务
 
@@ -8,50 +8,58 @@
 
 ---
 
-## AI 提示词：生成 WebGuide 引导任务
+## 提示词一：根据网页生成引导任务（推荐）
+
+> 这个提示词会让 AI 先分析网页结构，再生成精确的引导 JSON。适用于你能提供目标网页 URL 或截图的场景。
 
 ```
-请帮我生成一个 WebGuide 引导任务的 JSON 文件。
+你是一个专业的 WebGuide 引导任务生成器。请根据我提供的网页信息，生成一个完整的 WebGuide 引导任务 JSON 文件。
 
-WebGuide 是一个 Flutter APP，通过在 WebView 中加载网页，然后高亮特定元素并显示引导提示，帮助用户逐步完成网页操作。
+## 你的工作流程
 
-### 任务信息
+### 第一步：分析网页结构
 
-请根据以下信息生成任务：
+根据我提供的网页信息（URL、截图描述、或 HTML 片段），分析以下内容：
+1. 网页的主要功能和用途
+2. 用户完成核心操作需要经过哪些步骤
+3. 每个步骤涉及哪些交互元素（输入框、按钮、链接、复选框等）
+4. 这些元素的 HTML 标签、类型属性、文本内容
 
-- **任务名称**：【填写任务名称，如"B站注册引导"】
-- **目标网站**：【填写目标网址，如 https://www.bilibili.com】
-- **任务描述**：【简要描述这个任务帮助用户做什么】
+### 第二步：规划引导步骤
+
+将用户操作流程拆分为 5-10 个清晰的步骤，每个步骤聚焦一个操作：
+- 步骤顺序应与用户实际操作流程完全一致
+- 第一步通常是确认页面已加载（click 第一个输入框）
+- 中间步骤依次引导用户完成每个表单字段或操作
+- 最后一步是确认操作完成（等待页面跳转或成功提示出现）
+- 如果流程中需要用户离开 APP 操作（如查收邮件、短信验证码），用 `wait` + `manual` 验证
+
+### 第三步：生成 JSON
+
+按照下面的 JSON 格式输出完整的引导任务文件。
+
+## 我提供的网页信息
+
+- **网页 URL**：【在此粘贴网页地址，如 https://signup.example.com】
+- **网页截图/描述**：【描述网页上能看到的内容，或粘贴关键 HTML 片段】
+- **我要引导用户完成的操作**：【描述目标操作，如"注册一个新账号"、"发布一篇文章"】
+- **任务名称**：【如"Example 注册引导"】
 - **难度**：【easy / medium / hard】
-- **预计时间**：【预计完成时间，单位分钟】
 - **分类**：【signup / shopping / social / tools / development / other】
-- **图标 emoji**：【如 🎬、🛒、💬 等】
-- **标签**：【3-5 个关键词标签】
 
-### 引导步骤
-
-请描述用户需要完成的每一个步骤，包括：
-1. 步骤标题（简短，如"输入手机号"）
-2. 步骤描述（详细说明用户需要做什么）
-3. 目标元素（网页上的哪个元素需要操作）
-4. 操作类型（click / input / wait）
-5. 提示信息（给用户的小贴士）
-
-### 输出要求
-
-请输出一个完整的 JSON 文件，格式如下：
+## JSON 输出格式
 
 ```json
 {
-  "id": "唯一标识（英文小写+下划线）",
-  "name": "任务名称",
-  "description": "任务描述",
-  "category": "分类",
-  "difficulty": "难度",
+  "id": "英文小写+下划线的唯一标识",
+  "name": "任务中文名称",
+  "description": "一两句话描述这个任务帮助用户做什么",
+  "category": "分类（signup/shopping/social/tools/development/other）",
+  "difficulty": "难度（easy/medium/hard）",
   "estimatedTime": 预计分钟数,
-  "targetUrl": "目标网站URL",
-  "icon": "emoji图标",
-  "tags": ["标签1", "标签2"],
+  "targetUrl": "网页URL",
+  "icon": "一个emoji图标",
+  "tags": ["标签1", "标签2", "标签3"],
   "version": "1.0.0",
   "author": "作者名",
   "downloadCount": 0,
@@ -62,17 +70,296 @@ WebGuide 是一个 Flutter APP，通过在 WebView 中加载网页，然后高�
     {
       "id": "step_1",
       "order": 1,
-      "title": "步骤标题",
-      "description": "步骤详细描述",
+      "title": "简短步骤标题",
+      "description": "详细描述用户在这一步需要做什么，面向普通用户，语气友好",
       "target": {
         "selector": "CSS选择器",
         "tag": "HTML标签名",
+        "text": "元素的可见文本（可选）",
         "attributes": {"属性名": "属性值"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "操作类型",
+      "validation": "验证方式",
+      "hint": "给用户的小贴士或注意事项",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    }
+  ]
+}
+```
+
+## CSS 选择器规则（非常重要）
+
+选择器用于在网页中定位元素，必须准确且稳定：
+
+1. **优先使用基于 type 的选择器**（最稳定）：
+   - `input[type='email']` — 邮箱输入框
+   - `input[type='password']` — 密码输入框
+   - `input[type='text']` — 文本输入框
+   - `input[type='tel']` — 电话输入框
+   - `input[type='number']` — 数字输入框
+   - `input[type='checkbox']` — 复选框
+   - `button[type='submit']` — 提交按钮
+   - `button[type='button']` — 普通按钮
+   - `select` — 下拉选择框
+
+2. **可以使用基于文本内容的选择器**（较稳定）：
+   - `button:text('注册')` — 包含"注册"文本的按钮
+   - `a:text('忘记密码')` — 包含"忘记密码"文本的链接
+
+3. **可以使用基于 placeholder 的选择器**（较稳定）：
+   - `input[placeholder*='邮箱']` — placeholder 包含"邮箱"的输入框
+
+4. **避免使用**（不稳定，容易失效）：
+   - `#id` — 动态生成的 ID 每次可能不同
+   - `.class-name` — CSS 类名可能被压缩或自动生成
+   - `input[name='xxx']` — name 属性可能变化
+
+5. **当同一页面有多个相同 type 的元素时**，用 `text` 或 `attributes` 辅助区分：
+   - 第一个密码框：`input[type='password']` + text: "Password"
+   - 确认密码框：`input[type='password']` + text: "Confirm"
+
+## action 操作类型
+
+| 类型 | 用途 | 适用元素 |
+|------|------|----------|
+| `click` | 点击/聚焦元素 | 按钮、链接、输入框（聚焦）、复选框 |
+| `input` | 在输入框中输入内容 | text、email、password、tel 等输入框 |
+| `wait` | 等待页面变化或用户手动操作 | 需要用户离开 APP 的场景（查邮件等） |
+
+## validation 验证方式
+
+| 类型 | 用途 | 适用场景 |
+|------|------|----------|
+| `elementAppeared` | 等待元素出现在页面上 | 页面加载、表单字段出现 |
+| `urlChange` | 等待页面 URL 发生变化 | 点击提交按钮后页面跳转 |
+| `manual` | 需要用户手动确认完成 | 查收邮件验证码、短信验证 |
+
+## 超时时间设置
+
+| 场景 | waitTimeout | timeout |
+|------|-------------|---------|
+| 普通步骤（页面元素加载） | 30000（30秒） | 60000（60秒） |
+| 需要用户离开 APP（查邮件/短信） | 120000（2分钟） | 180000（3分钟） |
+| 网页可能加载较慢 | 60000（60秒） | 120000（2分钟） |
+
+## 完整示例
+
+以下是一个 GitHub 注册引导的完整 JSON，供你参考格式和写法：
+
+```json
+{
+  "id": "github_signup",
+  "name": "GitHub 注册引导",
+  "description": "手把手引导你在 GitHub 上完成账号注册，从访问注册页面到完成邮箱验证的全流程。",
+  "category": "signup",
+  "difficulty": "medium",
+  "estimatedTime": 15,
+  "targetUrl": "https://github.com/signup",
+  "icon": "🐙",
+  "tags": ["GitHub", "注册", "开发工具"],
+  "version": "1.0.0",
+  "author": "WebGuide",
+  "downloadCount": 0,
+  "rating": 0,
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z",
+  "steps": [
+    {
+      "id": "step_1",
+      "order": 1,
+      "title": "访问注册页面",
+      "description": "打开 GitHub 的注册页面，页面会显示邮箱输入框。",
+      "target": {
+        "selector": "input[type='email']",
+        "tag": "input",
+        "text": "Email",
+        "attributes": {"type": "email"},
         "waitForElement": true,
         "waitTimeout": 30000
       },
       "action": "click",
       "validation": "elementAppeared",
+      "hint": "如果页面没有自动跳转，请手动访问 github.com/signup",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_2",
+      "order": 2,
+      "title": "输入邮箱地址",
+      "description": "在邮箱输入框中输入你想用来注册 GitHub 的邮箱地址。",
+      "target": {
+        "selector": "input[type='email']",
+        "tag": "input",
+        "text": "Email",
+        "attributes": {"type": "email"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "urlChange",
+      "hint": "请确保输入有效的邮箱地址",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_3",
+      "order": 3,
+      "title": "设置密码",
+      "description": "为你的 GitHub 账号设置一个安全的密码。",
+      "target": {
+        "selector": "input[type='password']",
+        "tag": "input",
+        "text": "Password",
+        "attributes": {"type": "password"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "密码至少 8 个字符，建议包含字母和数字",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_4",
+      "order": 4,
+      "title": "输入用户名",
+      "description": "选择一个唯一的 GitHub 用户名。",
+      "target": {
+        "selector": "input[type='text']",
+        "tag": "input",
+        "text": "Username",
+        "attributes": {"type": "text"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "用户名将作为你的个人主页地址",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_5",
+      "order": 5,
+      "title": "验证邮箱",
+      "description": "GitHub 会向你注册的邮箱发送验证码，请查收邮件并输入验证码。",
+      "target": {
+        "selector": "input[type='text']",
+        "tag": "input",
+        "text": "Verify",
+        "attributes": {"type": "text"},
+        "waitForElement": true,
+        "waitTimeout": 120000
+      },
+      "action": "wait",
+      "validation": "manual",
+      "hint": "验证码通常在几秒内发送，如果没有收到请检查垃圾邮件",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 180000
+    },
+    {
+      "id": "step_6",
+      "order": 6,
+      "title": "点击验证按钮",
+      "description": "输入验证码后，点击验证按钮完成邮箱验证。",
+      "target": {
+        "selector": "button[type='submit']",
+        "tag": "button",
+        "text": "Verify",
+        "attributes": {"type": "submit"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "urlChange",
+      "hint": "如果验证码过期，可以点击重新发送",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 60000
+    }
+  ]
+}
+```
+
+## 注意事项
+
+1. 每个步骤的 `target.selector` 必须能在页面中唯一定位到目标元素
+2. 如果同一个页面有多个相同 type 的输入框（如两个 `input[type='password']`），需要通过 `text` 字段或 `attributes` 来区分
+3. 步骤描述使用中文，语气友好，面向不熟悉技术的普通用户
+4. `hint` 字段提供实用的小贴士，帮助用户顺利完成操作
+5. 只输出 JSON，不要输出任何其他解释文字
+```
+
+---
+
+## 提示词二：根据任务描述生成引导任务（简化版）
+
+> 如果你已经知道引导流程，只需要 AI 帮你生成 JSON 格式，使用这个简化版提示词。
+
+```
+请帮我生成一个 WebGuide 引导任务的 JSON 文件。
+
+WebGuide 是一个 Flutter APP，通过 WebView 加载网页，逐步引导用户完成操作。
+
+## 任务信息
+
+- **任务名称**：【填写任务名称】
+- **目标网站**：【填写目标网址】
+- **任务描述**：【简要描述】
+- **难度**：【easy / medium / hard】
+- **预计时间**：【分钟数】
+- **分类**：【signup / shopping / social / tools / development / other】
+- **图标 emoji**：【如 🎬、🛒、💬】
+
+## 引导步骤
+
+请描述用户需要完成的每一步操作。
+
+## JSON 格式要求
+
+```json
+{
+  "id": "唯一标识（英文小写+下划线）",
+  "name": "任务名称",
+  "description": "任务描述",
+  "category": "分类",
+  "difficulty": "难度",
+  "estimatedTime": 分钟数,
+  "targetUrl": "目标URL",
+  "icon": "emoji",
+  "tags": ["标签1", "标签2"],
+  "version": "1.0.0",
+  "author": "作者",
+  "downloadCount": 0,
+  "rating": 0,
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z",
+  "steps": [
+    {
+      "id": "step_1",
+      "order": 1,
+      "title": "步骤标题",
+      "description": "步骤描述（中文，面向普通用户）",
+      "target": {
+        "selector": "CSS选择器（优先用 input[type='xxx']）",
+        "tag": "HTML标签名",
+        "attributes": {"属性名": "属性值"},
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click / input / wait",
+      "validation": "elementAppeared / urlChange / manual",
       "hint": "提示信息",
       "waitAfterComplete": 2000,
       "isOptional": false,
@@ -82,120 +369,53 @@ WebGuide 是一个 Flutter APP，通过在 WebView 中加载网页，然后高�
 }
 ```
 
-### 关键规则
-
-1. **CSS 选择器**：使用最稳定的选择器，优先使用 `input[type='xxx']`、`button[type='submit']` 等基于类型的选择器，避免使用可能变化的 `name`、`id` 属性
-2. **waitTimeout**：普通步骤 30000ms（30秒），需要用户手动操作的步骤（如邮箱验证）120000ms（2分钟）
-3. **action 类型**：
-   - `click`：点击元素（按钮、链接、复选框）
-   - `input`：在输入框中输入内容
-   - `wait`：等待页面变化或用户操作
-4. **validation 类型**：
-   - `elementAppeared`：元素出现在页面上
-   - `urlChange`：页面 URL 发生变化
-   - `manual`：需要用户手动确认（如查看邮箱）
-5. **步骤数量**：建议 5-10 步，每步聚焦一个操作
-6. **描述语言**：使用中文，面向普通用户，避免技术术语
-
-### 示例步骤
-
-以 GitHub 注册为例：
-
-步骤1：访问注册页面
-- 目标：`input[type='email']`（邮箱输入框）
-- 操作：click
-- 说明：让用户点击邮箱输入框，确认页面已加载
-
-步骤2：输入邮箱
-- 目标：`input[type='email']`
-- 操作：input
-- 说明：引导用户在邮箱框中输入邮箱地址
-
-步骤3：设置密码
-- 目标：`input[type='password']`
-- 操作：input
-- 说明：引导用户设置密码
-
-请根据我提供的任务信息，生成完整的 JSON 文件。
+规则：CSS 选择器优先用 `input[type='xxx']`、`button[type='submit']` 等类型选择器；waitTimeout 普通步骤 30000ms，需离开 APP 的步骤 120000ms；只输出 JSON。
 ```
 
 ---
 
 ## 使用生成的 JSON 文件
 
-生成 JSON 文件后，你有两种方式导入到 WebGuide APP 中：
+生成 JSON 后，通过以下任一方式导入到 WebGuide APP：
 
-### 方式一：从本地文件导入
+| 方式 | 操作 |
+|------|------|
+| **直接粘贴** | 打开 APP > 首页右上角下载图标 > "直接粘贴 JSON" > 粘贴 > 导入 |
+| **本地文件** | 保存为 `.json` 文件 > 传到手机 > APP 中选择"从本地文件导入" |
+| **URL 导入** | 上传 JSON 到任意可访问的 URL > APP 中输入 URL > 导入 |
 
-1. 将 AI 生成的 JSON 内容保存为 `.json` 文件（如 `my_task.json`）
-2. 将文件传输到手机存储
-3. 打开 WebGuide APP，点击首页右上角的下载图标
-4. 选择"从本地文件导入"，选择你的 JSON 文件
-
-### 方式二：从 URL 导入
-
-1. 将 JSON 文件上传到一个可访问的 URL（如 GitHub Raw、Gist、个人服务器等）
-2. 打开 WebGuide APP，点击首页右上角的下载图标
-3. 选择"从 URL 导入"，输入 JSON 文件的 URL
-4. 点击"导入"
-
-## 任务 JSON 字段说明
+## 任务 JSON 字段参考
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `id` | string | 是 | 唯一标识，英文小写+下划线，如 `github_signup` |
-| `name` | string | 是 | 任务名称，显示在列表中 |
-| `description` | string | 是 | 任务描述，显示在详情页 |
-| `category` | string | 是 | 分类：`signup`、`shopping`、`social`、`tools`、`development`、`other` |
-| `difficulty` | string | 是 | 难度：`easy`、`medium`、`hard` |
-| `estimatedTime` | int | 是 | 预计完成时间（分钟） |
-| `targetUrl` | string | 是 | 引导开始时加载的网页 URL |
-| `icon` | string | 是 | Emoji 图标，如 `🐙`、`🛒` |
-| `tags` | array | 是 | 标签数组，用于搜索 |
-| `version` | string | 是 | 版本号，如 `1.0.0` |
-| `author` | string | 是 | 作者名称 |
-| `steps` | array | 是 | 步骤数组，至少包含一个步骤 |
-
-### 步骤字段说明
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `id` | string | 是 | 步骤唯一标识 |
-| `order` | int | 是 | 步骤顺序，从 1 开始 |
-| `title` | string | 是 | 步骤标题，显示在引导卡片上 |
-| `description` | string | 是 | 步骤详细描述 |
-| `target.selector` | string | 是 | CSS 选择器，用于定位网页元素 |
-| `target.tag` | string | 否 | HTML 标签名，辅助验证 |
-| `target.attributes` | object | 否 | 元素属性，辅助定位 |
-| `target.waitTimeout` | int | 是 | 等待元素出现的超时时间（毫秒） |
-| `action` | string | 是 | 操作类型：`click`、`input`、`wait` |
-| `validation` | string | 是 | 验证方式：`elementAppeared`、`urlChange`、`manual` |
-| `hint` | string | 否 | 提示信息，显示在引导卡片中 |
-| `timeout` | int | 是 | 步骤整体超时时间（毫秒） |
+| `id` | string | 是 | 唯一标识，英文小写+下划线 |
+| `name` | string | 是 | 任务名称 |
+| `description` | string | 是 | 任务描述 |
+| `category` | string | 是 | signup / shopping / social / tools / development / other |
+| `difficulty` | string | 是 | easy / medium / hard |
+| `estimatedTime` | int | 是 | 预计分钟数 |
+| `targetUrl` | string | 是 | 引导起始 URL |
+| `icon` | string | 是 | Emoji 图标 |
+| `tags` | array | 是 | 搜索标签 |
+| `steps` | array | 是 | 步骤数组（至少 1 个） |
+| `steps[].action` | string | 是 | click / input / wait |
+| `steps[].validation` | string | 是 | elementAppeared / urlChange / manual |
+| `steps[].target.selector` | string | 是 | CSS 选择器 |
 
 ## 内置任务
 
-当前内置以下引导任务：
-
-| 任务 | 分类 | 难度 | 预计时间 |
-|------|------|------|----------|
+| 任务 | 分类 | 难度 | 时间 |
+|------|------|------|------|
 | GitHub 注册引导 | signup | medium | 15 分钟 |
 | Gitee 注册引导 | signup | easy | 10 分钟 |
 
 ## 开发
 
 ```bash
-# 克隆项目
 git clone https://github.com/weijia/webguide.git
 cd webguide
-
-# 安装依赖
 flutter pub get
-
-# 运行
 flutter run
-
-# 构建 APK
 flutter build apk --release
 ```
 
