@@ -23,9 +23,9 @@ if (flutterVersionName == null) {
 }
 
 // 签名配置：从环境变量读取（GitHub Actions 使用）
-def keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-def keyAlias = System.getenv("KEY_ALIAS")
-def keyPassword = System.getenv("KEY_PASSWORD")
+def releaseStorePassword = System.getenv("KEYSTORE_PASSWORD")
+def releaseKeyAlias = System.getenv("KEY_ALIAS")
+def releaseKeyPassword = System.getenv("KEY_PASSWORD")
 
 android {
     namespace "com.weijia.webguide"
@@ -51,11 +51,11 @@ android {
     // 发布签名配置
     signingConfigs {
         release {
-            if (keystorePassword != null && keyAlias != null && keyPassword != null) {
+            if (releaseStorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null) {
                 storeFile file("release-keystore.jks")
-                storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             } else {
                 // 本地开发回退到 debug 签名
                 storeFile file("debug.keystore")
