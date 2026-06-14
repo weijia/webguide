@@ -1,0 +1,182 @@
+{
+  "id": "gitee_signup",
+  "name": "Gitee 注册引导",
+  "description": "手把手引导你在 Gitee（码云）上完成账号注册。Gitee 是国内领先的代码托管平台，访问速度快，适合国内开发者使用。",
+  "category": "signup",
+  "difficulty": "easy",
+  "estimatedTime": 10,
+  "targetUrl": "https://gitee.com/signup",
+  "icon": "🐱",
+  "tags": ["Gitee", "码云", "注册", "代码托管", "国内"],
+  "version": "1.0.0",
+  "author": "WebGuide",
+  "downloadCount": 0,
+  "rating": 0,
+  "createdAt": "2026-06-14T08:00:00Z",
+  "updatedAt": "2026-06-14T08:00:00Z",
+  "steps": [
+    {
+      "id": "step_1",
+      "order": 1,
+      "title": "访问 Gitee 注册页面",
+      "description": "首先，我们需要打开 Gitee 的注册页面。页面会显示注册表单，包含用户名、密码、手机号等字段。",
+      "target": {
+        "selector": "input[type='email']",
+        "tag": "input",
+        "attributes": {
+          "type": "email"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "如果页面没有自动跳转，请手动访问 gitee.com/signup",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_2",
+      "order": 2,
+      "title": "输入邮箱地址",
+      "description": "在邮箱输入框中输入你想用来注册 Gitee 的邮箱地址。Gitee 支持邮箱注册，后续需要验证邮箱。",
+      "target": {
+        "selector": "input[type='email']",
+        "tag": "input",
+        "attributes": {
+          "type": "email"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "请确保输入有效的邮箱地址，例如 yourname@example.com",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_3",
+      "order": 3,
+      "title": "输入用户名",
+      "description": "选择一个唯一的 Gitee 用户名。用户名将作为你的个人主页地址（gitee.com/username），只能包含字母、数字、下划线和连字符。",
+      "target": {
+        "selector": "input[type='text']",
+        "tag": "input",
+        "attributes": {
+          "type": "text"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "用户名只能包含字母、数字、下划线和连字符，且不能以数字开头",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_4",
+      "order": 4,
+      "title": "设置密码",
+      "description": "为你的 Gitee 账号设置一个安全的密码。密码长度至少 6 位，建议包含字母和数字的组合。",
+      "target": {
+        "selector": "input[type='password']",
+        "tag": "input",
+        "attributes": {
+          "type": "password"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "input",
+      "validation": "elementAppeared",
+      "hint": "建议使用包含大小写字母和数字的强密码",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_5",
+      "order": 5,
+      "title": "同意服务条款",
+      "description": "勾选同意 Gitee 服务条款和隐私政策的复选框。这是完成注册的必要步骤。",
+      "target": {
+        "selector": "input[type='checkbox']",
+        "tag": "input",
+        "attributes": {
+          "type": "checkbox"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "elementAppeared",
+      "hint": "请仔细阅读服务条款后再勾选同意",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_6",
+      "order": 6,
+      "title": "点击注册按钮",
+      "description": "确认所有信息填写正确后，点击注册按钮提交表单。系统会验证你的信息并创建账号。",
+      "target": {
+        "selector": "button[type='submit']",
+        "tag": "button",
+        "attributes": {
+          "type": "submit"
+        },
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "click",
+      "validation": "urlChange",
+      "hint": "如果提示用户名已存在，请尝试其他用户名",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 60000
+    },
+    {
+      "id": "step_7",
+      "order": 7,
+      "title": "验证邮箱",
+      "description": "Gitee 会向你注册的邮箱发送一封验证邮件。请登录你的邮箱，找到来自 Gitee 的验证邮件并点击验证链接完成验证。",
+      "target": {
+        "selector": "a",
+        "tag": "a",
+        "text": "验证",
+        "waitForElement": true,
+        "waitTimeout": 120000
+      },
+      "action": "wait",
+      "validation": "manual",
+      "hint": "验证码通常会在几分钟内发送到你的邮箱，如果没有收到请检查垃圾邮件文件夹",
+      "waitAfterComplete": 3000,
+      "isOptional": false,
+      "timeout": 180000
+    },
+    {
+      "id": "step_8",
+      "order": 8,
+      "title": "进入 Gitee 首页",
+      "description": "恭喜！注册和验证都已完成。现在你将进入 Gitee 的首页，你可以在这里创建仓库、浏览开源项目，或者完善你的个人资料。",
+      "target": {
+        "selector": "nav",
+        "tag": "nav",
+        "waitForElement": true,
+        "waitTimeout": 30000
+      },
+      "action": "wait",
+      "validation": "elementAppeared",
+      "hint": "你可以点击顶部导航栏浏览不同的功能区域",
+      "waitAfterComplete": 2000,
+      "isOptional": false,
+      "timeout": 60000
+    }
+  ]
+}

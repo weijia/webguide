@@ -97,6 +97,7 @@ class TaskLocalSource {
     // 内置任务资源路径列表
     final builtinAssets = [
       'assets/tasks/github_signup.json',
+      'assets/tasks/gitee_signup.json',
     ];
 
     for (final assetPath in builtinAssets) {
