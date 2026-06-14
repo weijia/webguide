@@ -257,6 +257,29 @@ class TaskRepository {
     }
   }
 
+  /// 从 JSON 字符串导入任务
+  /// [jsonString] 任务 JSON 文本
+  Future<GuideTask> importTaskFromJsonString(String jsonString) async {
+    try {
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+
+      // 验证必要字段
+      _validateTaskJson(jsonMap);
+
+      final task = GuideTask.fromJson(jsonMap);
+
+      // 保存到缓存
+      await _saveImportedTask(task);
+
+      return task;
+    } on FormatException catch (e) {
+      throw TaskImportException('JSON 格式错误: ${e.message}');
+    } catch (e) {
+      if (e is TaskImportException) rethrow;
+      throw TaskImportException('导入失败: ${e.toString()}');
+    }
+  }
+
   /// 保存导入的任务到本地缓存
   Future<void> _saveImportedTask(GuideTask task) async {
     // 获取现有缓存

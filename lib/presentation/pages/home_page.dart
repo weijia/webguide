@@ -305,12 +305,14 @@ class _ImportTaskDialog extends ConsumerStatefulWidget {
 
 class _ImportTaskDialogState extends ConsumerState<_ImportTaskDialog> {
   final _urlController = TextEditingController();
+  final _jsonController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
   @override
   void dispose() {
     _urlController.dispose();
+    _jsonController.dispose();
     super.dispose();
   }
 
@@ -360,7 +362,7 @@ class _ImportTaskDialogState extends ConsumerState<_ImportTaskDialog> {
               icon: Icons.link,
               title: '从 URL 导入',
               subtitle: '输入任务 JSON 文件的下载链接',
-              onTap: null, // 点击展开 URL 输入
+              onTap: null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -389,6 +391,68 @@ class _ImportTaskDialogState extends ConsumerState<_ImportTaskDialog> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _importFromUrl,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: const Color(0xFF0f172a),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('导入'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // 直接粘贴 JSON
+            _buildImportOption(
+              icon: Icons.content_paste,
+              title: '直接粘贴 JSON',
+              subtitle: '将 JSON 文本直接粘贴到输入框',
+              onTap: null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _jsonController,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        ),
+                    decoration: InputDecoration(
+                      hintText: '{\n  "id": "my_task",\n  "name": "我的任务",\n  ...\n}',
+                      hintStyle: TextStyle(
+                        color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                      prefixIcon: const Icon(Icons.code, size: 18),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 6,
+                    minLines: 3,
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _importFromJsonString,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: const Color(0xFF0f172a),
@@ -533,6 +597,46 @@ class _ImportTaskDialogState extends ConsumerState<_ImportTaskDialog> {
     });
 
     final result = await ref.read(taskListProvider.notifier).importFromUrl(url);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result.startsWith('导入失败')) {
+      setState(() {
+        _error = result;
+      });
+      return;
+    }
+
+    // 导入成功
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('成功导入任务: $result'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+    }
+  }
+
+  /// 从粘贴的 JSON 文本导入
+  Future<void> _importFromJsonString() async {
+    final jsonString = _jsonController.text.trim();
+    if (jsonString.isEmpty) {
+      setState(() {
+        _error = '请粘贴 JSON 内容';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await ref.read(taskListProvider.notifier).importFromJsonString(jsonString);
 
     setState(() {
       _isLoading = false;

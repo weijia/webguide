@@ -190,6 +190,21 @@ class TaskListNotifier extends StateNotifier<TaskListState> {
       return '导入失败: ${e.toString()}';
     }
   }
+
+  /// 从 JSON 字符串导入任务
+  Future<String?> importFromJsonString(String jsonString) async {
+    try {
+      final task = await _repository.importTaskFromJsonString(jsonString);
+
+      // 刷新列表以显示新导入的任务
+      await loadTasks(forceRefresh: true);
+      return task.name;
+    } on TaskImportException catch (e) {
+      return '导入失败: ${e.message}';
+    } catch (e) {
+      return '导入失败: ${e.toString()}';
+    }
+  }
 }
 
 // ==================== 引导会话 Provider ====================
